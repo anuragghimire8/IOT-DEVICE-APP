@@ -3,9 +3,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-
-const AuthRouter = require("./Routes/AuthRouter"); 
-
+const sendEmailNotification = require("./Controllers/SendMail"); // Import the email notification function
+const {authenticateUser} = require('./Controllers/AuthController'); // Import the middleware
+const AuthRouter=require("./Routes/AuthRouter")
 
 const app = express();
 const PORT = process.env.PORT || 5000; // Use port from environment variable or default to 5000
@@ -36,6 +36,12 @@ const SensorData = mongoose.model("SensorData", SensorDataSchema);
 
 // Function to determine game status based on temperature and humidity
 const determineGameStatus = (temperature, humidity) => {
+  // Check if data is missing
+  if (temperature == null || humidity == null) {
+    return "No data received"; // Handle cases where data is missing
+  }
+  
+  // Check for extreme conditions
   if (temperature < 0 || temperature > 35) {
     return "Game Forfeited (Extreme Temperature)";
   } else if (humidity > 90) {
@@ -43,24 +49,61 @@ const determineGameStatus = (temperature, humidity) => {
   } else if (humidity > 75) {
     return "Game Postponed (Unfavorable Conditions)";
   }
+  
+  // If all conditions are met, return "Game Allowed"
   return "Game Allowed";
 };
 
 // API Endpoint to receive sensor data from ESP32
-app.post("/sensor-data", async (req, res) => {
+// API Endpoint to receive sensor data from ESP32
+app.post("/sensor-data", authenticateUser, async (req, res) => {
   try {
+    console.log("Received POST data:", req.body);  // Log the data for debugging
+
     const { temperature, humidity, air_quality } = req.body;
+
+    // Check if temperature and humidity are provided
+   
+
     const status = determineGameStatus(temperature, humidity);
 
-    // Save sensor data
-    const newData = new SensorData({ temperature, humidity, air_quality, status });
+    // Create a new sensor data entry
+    const newData = new SensorData({
+      temperature,
+      humidity,
+      air_quality,
+      status,
+    });
+
+    // Save the data to the database
     await newData.save();
 
-    res.status(201).json({ message: "✅ Data saved successfully", status, data: newData });
+    // Optionally, send an email if the user is authenticated
+    if (req.user && req.user.email) {
+      await sendEmailNotification(req.user.email, temperature, status);
+    }
+
+    // Respond with the saved data, including all fields
+    res.status(201).json({
+      message: "✅ Data saved & email sent",
+      status,
+      data: {
+        _id: newData._id,
+        temperature: newData.temperature,
+        humidity: newData.humidity,
+        air_quality: newData.air_quality,
+        status: newData.status,
+        timestamp: newData.timestamp,
+      },
+    });
   } catch (err) {
+    console.error("Error occurred while saving sensor data:", err);
     res.status(500).json({ error: "❌ Server Error: " + err.message });
   }
 });
+
+
+
 
 // API Endpoint to fetch the latest sensor data (up to 10 most recent entries)
 app.get("/sensor-data", async (req, res) => {
