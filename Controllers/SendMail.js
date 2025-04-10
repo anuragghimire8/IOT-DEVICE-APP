@@ -7,22 +7,44 @@ const transporter = nodemailer.createTransport({
     pass: process.env.APP_PASSWORD,  // Your Gmail App Password
   },
 });
-const sendEmailNotification = async (userEmail, temperature, status) => {
-  const mailOptions = {
-    from: `"IOR System 👻" <${process.env.EMAIL}>`, // Sender address
-    to: userEmail,  // Recipient email
-    subject: `Alert: ${status}`, // Subject using status
-    html: `<p>The temperature is : <strong>${temperature}°C</strong></p>
-           <p>Status: <strong>${status}</strong></p>`, // Body with status and temperature
-  };
 
+const sendEmailNotification = async (email, temperature, status, humidity = null) => {
   try {
+    // Update the email content to include more information
+    const subject = `Football Stadium Conditions Update: ${status}`;
+    let content = `
+      <h2>Stadium Conditions Update</h2>
+      <p><strong>Status:</strong> ${status}</p>
+      <p><strong>Temperature:</strong> ${temperature}°C</p>
+    `;
+    
+    // Add humidity if available
+    if (humidity !== null) {
+      content += `<p><strong>Humidity:</strong> ${humidity}%</p>`;
+    }
+    
+    content += `
+      <p>Please check the stadium management system for more details.</p>
+      <p>This is an automated notification.</p>
+    `;
+    
+    // Define mailOptions with the subject and content
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
+      subject: subject,
+      html: content
+    };
+    
+    // Send the email with the updated content
     const info = await transporter.sendMail(mailOptions);
     console.log("Message sent: %s", info.messageId);  // Log the sent message ID
+    
+    return true;
   } catch (error) {
-    console.error("Error sending email:", error);  // Log any error
+    console.error("Error sending email notification:", error);
+    throw error;
   }
 };
-
 
 module.exports = sendEmailNotification;

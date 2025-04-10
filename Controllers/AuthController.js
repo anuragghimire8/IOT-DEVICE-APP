@@ -59,7 +59,7 @@ const signup = async (req, res) => {
         });
     } catch (err) {
         console.error("Signup error:", err);
-        return res.status(500).json({
+        return res.status(5000).json({
             success: false,
             message: "Internal server error. Please try again later.",
         });
@@ -110,7 +110,7 @@ const login = async (req, res) => {
         });
     } catch (err) {
         console.error("Login error:", err);
-        return res.status(500).json({
+        return res.status(5000).json({
             success: false,
             message: "Internal server error. Please try again later.",
         });
