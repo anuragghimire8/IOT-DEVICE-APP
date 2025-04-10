@@ -1,4 +1,5 @@
-const bcrypt = require("bcrypt");
+// Change this line at the top of the file
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const UserModel = require("../Models/User");
 
@@ -140,4 +141,15 @@ const authenticateUser = (req, res, next) => {
     }
 };
 
-module.exports = { signup, login, authenticateUser };
+// Add this in your AuthController.js
+const signout = (req, res) => {
+    return res.status(200).json({
+        success: true,
+        message: "User signed out successfully. Please delete the token from client-side storage.",
+    });
+};
+
+module.exports = { signup, login, authenticateUser, signout };
+
+
+
