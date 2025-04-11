@@ -51,9 +51,9 @@ const determineGameStatus = (temperature, humidity) => {
   } else if (humidity > 75) {
     return "Game Postponed (Unfavorable Conditions)";
   }
-  
+  else
   // If all conditions are met, return "Game Allowed"
-  return "Game Allowed";
+  return "Game Allowed ";
 };
 
 // API Endpoint to receive sensor data from ESP32
@@ -74,7 +74,7 @@ app.post("/sensor-data", authenticateUser, async (req, res) => {
     const newData = new SensorData({
       temperature,
       humidity,
-      air_quality: air_quality || null, // Handle optional air_quality
+      air_quality, // Handle optional air_quality
       status,
     });
 
@@ -95,7 +95,7 @@ app.post("/sensor-data", authenticateUser, async (req, res) => {
     res.status(201).json({
       message: "✅ Data saved successfully",
       status,
-      data: newData.toObject(), // Convert to plain object for response
+      
     });
   } catch (err) {
     console.error("Error occurred while saving sensor data:", err);
@@ -140,6 +140,47 @@ app.listen(PORT, () => {
   console.log('🎉 Welcome to the server! Your IoT project is up and running!');
 });
 
+/* const checkConditionsAndNotify = async () => {
+  try {
+    // Get the latest sensor data (just one document)
+    const latestData = await SensorData.findOne().sort({ timestamp: -1 });
+
+    if (!latestData) {
+      console.log("⚠️ No sensor data available for checking");
+      return;
+    }
+
+    // Determine the status based on the temperature and humidity
+    const status = determineGameStatus(latestData.temperature, latestData.humidity);
+    
+    console.log(`📡 Status: ${status} | Temp: ${latestData.temperature}°C | Humidity: ${latestData.humidity}%`);
+
+    // Get all users who should receive notifications
+    const users = await UserModel.find();
+
+    // Send email to each user, regardless of status
+    for (const user of users) {
+      try {
+        await sendEmailNotification(
+          user.email, 
+          latestData.temperature, 
+          status,
+          latestData.humidity
+        );
+        console.log(`✅ Notification sent to ${user.email}`);
+      } catch (emailError) {
+        console.error(`❌ Failed to send email to ${user.email}:`, emailError);
+      }
+    }
+
+    console.log(`📬 Emails sent to ${users.length} user(s)`);
+  } catch (error) {
+    console.error("❌ Error in condition checking job:", error);
+  }
+};
+ */
+let lastSentStatus = '';  // Track the last sent status
+
 const checkConditionsAndNotify = async () => {
   try {
     // Get the latest sensor data (just one document)
@@ -150,47 +191,54 @@ const checkConditionsAndNotify = async () => {
       console.log("No sensor data available for checking");
       return;
     }
-    
-    // Check if conditions are unfavorable
+
+    // Check the current game status based on the latest data
     const status = determineGameStatus(latestData.temperature, latestData.humidity);
-    
-    if(status === "No data received"){
-      console.log("No data received");
+
+    // If the status is the same as the last sent status, do nothing (no email to avoid spam)
+    if (status === lastSentStatus) {
+      console.log("Status hasn't changed. No need to send email.");
       return;
     }
 
-    // If game is not allowed, send notifications
-    if (status !== "Game Allowed") {
-      console.log(`Unfavorable conditions detected: ${status}`);
-      
-      // Get all users who should receive notifications
-      const users = await UserModel.find();
-      
-      // Send email to each user
-      for (const user of users) {
-        try {
-          await sendEmailNotification(
-            user.email, 
-            latestData.temperature, 
-            status,
-            latestData.humidity
-          );
-          console.log(`Notification sent to ${user.email}`);
-        } catch (emailError) {
-          console.error(`Failed to send email to ${user.email}:`, emailError);
-        }
+    // Update the last sent status to the current one
+    lastSentStatus = status;
+
+    // Log the status to console
+    console.log(`Current Status: ${status}`);
+
+    // Send notification for the current status (including "Game Allowed", "Game Forfeited", etc.)
+    console.log(`Sending email notification for status: ${status}`);
+    
+    // Get all users who should receive notifications
+    const users = await UserModel.find();
+
+    // Send email to each user
+    for (const user of users) {
+      try {
+        await sendEmailNotification(
+          user.email, 
+          latestData.temperature, 
+          status, 
+          latestData.humidity,
+          latestData.air_quality
+        );
+        console.log(`Notification sent to ${user.email}`);
+      } catch (emailError) {
+        console.error(`Failed to send email to ${user.email}:`, emailError);
       }
-      
-      console.log(`Sent notifications to ${users.length} users`);
-    } else {
-      console.log("Conditions are favorable, no notifications needed");
     }
+
+    console.log(`Sent notifications to ${users.length} users`);
+    
   } catch (error) {
     console.error("Error in condition checking job:", error);
   }
 };
 
+
+
 // Schedule the job to run every 30 minutes without storing the reference
-schedule.scheduleJob('*/30 * * * *', checkConditionsAndNotify);
+schedule.scheduleJob('*/1 * * * *', checkConditionsAndNotify);
 
 console.log("Scheduled condition monitoring job");

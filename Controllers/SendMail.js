@@ -8,38 +8,60 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmailNotification = async (email, temperature, status, humidity = null) => {
+const sendEmailNotification = async (email, temperature, status, humidity, air_quality = null) => {
   try {
-    // Update the email content to include more information
     const subject = `Football Stadium Conditions Update: ${status}`;
     let content = `
-      <h2>Stadium Conditions Update</h2>
+    <h2>Dear Team <h2>
+      <h2>Field Conditions Update</h2>
       <p><strong>Status:</strong> ${status}</p>
       <p><strong>Temperature:</strong> ${temperature}°C</p>
+      <p><strong>Air Quality:</strong> ${air_quality}</p>
     `;
-    
-    // Add humidity if available
+
     if (humidity !== null) {
       content += `<p><strong>Humidity:</strong> ${humidity}%</p>`;
     }
-    
+
+    // Add custom messages based on game status
+    if (status === "Game Allowed") {
+      content += `
+        <p>The current stadium conditions are suitable for a match. You may proceed as scheduled.</p>
+      `;
+
+    } else if (status === "Game Postponed (Unfavorable Conditions)") {
+      content += `
+        <p>The match is postponed due to unfavorable humidity conditions. Matches are only allowed when humidity is below 75%.</p>
+        <p>Please monitor the conditions and plan a future match once conditions improve.</p>
+      `;
+    } else if (status === "Game Cancelled (High Humidity)") {
+      content += `
+        <p>The match is cancelled due to high humidity levels, which exceed the safety threshold.</p>
+        <p>Please wait until humidity levels drop below 90% before scheduling another match.</p>
+      `;
+    } else if (status === "Game Forfeited (Extreme Temperature)") {
+      content += `
+        <p>The match cannot proceed due to extreme temperature conditions.</p>
+        <p>Matches are only allowed when the temperature is between 0°C and 35°C.</p>
+        <p>Please monitor the stadium conditions and reschedule accordingly.</p>
+      `;
+    }
+
     content += `
       <p>Please check the stadium management system for more details.</p>
-      <p>This is an automated notification.</p>
+   
     `;
-    
-    // Define mailOptions with the subject and content
+
     const mailOptions = {
       from: process.env.EMAIL,
       to: email,
       subject: subject,
       html: content
     };
-    
-    // Send the email with the updated content
+
     const info = await transporter.sendMail(mailOptions);
-    console.log("Message sent: %s", info.messageId);  // Log the sent message ID
-    
+    console.log("Message sent: %s", info.messageId);
+
     return true;
   } catch (error) {
     console.error("Error sending email notification:", error);
