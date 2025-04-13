@@ -12,9 +12,13 @@ import "aos/dist/aos.css";
 import TemperaturePage from "./components/Pages/TemperaturePage";
 import HumidityPage from "./components/Pages/HumidityPage";
 import AirQualityPage from "./components/Pages/AirQualityPage";
+import About from "./components/About/About";
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // ✅ Initialize auth state from localStorage
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem("authToken");
+  });
 
   useEffect(() => {
     AOS.init({
@@ -24,14 +28,6 @@ const App = () => {
       delay: 100,
     });
     AOS.refresh();
-  }, []);
-
-  useEffect(() => {
-    // Check if user is authenticated (for example, check localStorage or session)
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      setIsAuthenticated(true);
-    }
   }, []);
 
   const PrivateRoute = ({ element }) => {
@@ -56,7 +52,7 @@ const App = () => {
           <Route path="/air-quality" element={<PrivateRoute element={<AirQualityPage />} />} />
 
           {/* Public Pages */}
-          <Route path="/about" element={<div>About Page</div>} />
+          <Route path="/about" element={<About />} />
           <Route path="/contact" element={<div>Contact Page</div>} />
 
           {/* 404 Page */}

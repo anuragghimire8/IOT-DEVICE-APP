@@ -43,24 +43,40 @@ const Login = ({ setIsAuthenticated }) => {
       const result = await response.json();
 
       if (result.success) {
-        // Store the token and user data
         localStorage.setItem("authToken", result.token);
         localStorage.setItem("user", JSON.stringify(result.user));
-
-        setIsAuthenticated(true); // Update state to reflect authentication
+        setIsAuthenticated(true);
         handleSuccess(result.message);
 
         setTimeout(() => {
-          navigate("/"); // Redirect to Hero Page ("/") after login
+          navigate("/");
         }, 1000);
       } else {
-        handleError(result.message);
+        handleError(result.message || "Login failed");
       }
     } catch (err) {
       handleError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Optional logout utility you can reuse in Navbar
+  const handleLogout = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+
+    await fetch("http://localhost:5000/auth/signout", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    setIsAuthenticated(false);
+    navigate("/login");
   };
 
   return (
