@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Logo from "../../assets/website/logo.png";
 import { FaUserPlus, FaCaretDown, FaSignOutAlt } from "react-icons/fa";
 import DarkMode from "./DarkMode";
 import { handleSuccess } from "../../utils";
+import { useAuth } from "../context/Authcontext";
 
 const Menu = [
   { id: 1, name: "Home", link: "/" },
@@ -14,17 +15,12 @@ const DropdownLinks = [
   { name: "Temperature", link: "/temperature" },
   { name: "Humidity", link: "/humidity" },
   { name: "AirQuality", link: "/air-quality" },
+  { name: "Weather", link: "/weather" },
 ];
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Check auth state on mount
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    setIsAuthenticated(!!token);
-  }, []);
+  const { isAuthenticated, setIsAuthenticated } = useAuth();
 
   const handleLogout = async () => {
     const token = localStorage.getItem("authToken");
@@ -53,13 +49,11 @@ const Navbar = () => {
     <div className="shadow-md bg-white dark:bg-gray-900 dark:text-white duration-200">
       <div className="container py-3 sm:py-0">
         <div className="flex justify-between items-center">
-          {/* Logo */}
           <Link to="/" className="font-bold text-2xl sm:text-3xl flex gap-2">
             <img src={Logo} alt="Logo" className="w-10" />
             FFEMS-RAMR
           </Link>
 
-          {/* Menu Items */}
           <div className="flex justify-between items-center gap-4">
             <DarkMode />
 
@@ -75,7 +69,6 @@ const Navbar = () => {
                 </li>
               ))}
 
-              {/* Dropdown */}
               <li className="group relative cursor-pointer">
                 <span className="flex h-[72px] items-center gap-[2px]">
                   Quick Links
@@ -98,7 +91,6 @@ const Navbar = () => {
               </li>
             </ul>
 
-            {/* Auth Buttons */}
             {isAuthenticated ? (
               <button
                 onClick={handleLogout}

@@ -3,11 +3,13 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { handleError, handleSuccess } from "../../utils";
+import { useAuth } from "../context/AuthContext";
 
-const Login = ({ setIsAuthenticated }) => {
+const Login = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const { setIsAuthenticated } = useAuth();
 
+  const [loading, setLoading] = useState(false);
   const [loginInfo, setLoginInfo] = useState({
     email: "",
     password: "",
@@ -23,16 +25,15 @@ const Login = ({ setIsAuthenticated }) => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const { email, password } = loginInfo;
 
-    if (!email || !password) {
+    if (!loginInfo.email || !loginInfo.password) {
       return handleError("All fields are required!");
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/auth/login", {
+      const response = await fetch("http://localhost:5001/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,14 +44,16 @@ const Login = ({ setIsAuthenticated }) => {
       const result = await response.json();
 
       if (result.success) {
-        localStorage.setItem("authToken", result.token);
-        localStorage.setItem("user", JSON.stringify(result.user));
-        setIsAuthenticated(true);
-        handleSuccess(result.message);
+        const user = result.user;
 
-        setTimeout(() => {
-          navigate("/");
-        }, 1000);
+        localStorage.setItem("authToken", result.token);
+        localStorage.setItem("user", JSON.stringify(user));
+        setIsAuthenticated(true);
+
+        // ✅ Welcome message using name
+        handleSuccess(`Welcome, ${user.name}!`);
+
+        setTimeout(() => navigate("/"), 1000);
       } else {
         handleError(result.message || "Login failed");
       }
@@ -61,53 +64,20 @@ const Login = ({ setIsAuthenticated }) => {
     }
   };
 
-  // Optional logout utility you can reuse in Navbar
-  const handleLogout = async () => {
-    const token = localStorage.getItem("authToken");
-    if (!token) return;
-
-    await fetch("http://localhost:5000/auth/signout", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
-    setIsAuthenticated(false);
-    navigate("/login");
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="container px-4 mx-auto"
-    >
-      <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className="max-w-lg mx-auto bg-white dark:bg-gray-900 shadow-lg p-8 rounded-lg"
-      >
+    <motion.div className="container px-4 mx-auto" initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div className="max-w-lg mx-auto bg-white dark:bg-gray-900 shadow-lg p-8 rounded-lg">
         <div className="text-center mb-6">
-          <motion.h2
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-3xl md:text-4xl font-extrabold"
-          >
+          <motion.h2 className="text-3xl md:text-4xl font-extrabold">
             Login
           </motion.h2>
         </div>
 
         <form onSubmit={handleLogin}>
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }} className="mb-6">
+          <motion.div className="mb-6">
             <label className="block mb-2 font-extrabold">Email</label>
             <input
-              className="inline-block w-full p-4 leading-6 text-lg font-extrabold bg-white dark:bg-gray-800 shadow border-2 border-indigo-900 rounded focus:ring-2 focus:ring-indigo-600 transition-all"
+              className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-indigo-900 rounded"
               type="email"
               name="email"
               value={loginInfo.email}
@@ -117,10 +87,10 @@ const Login = ({ setIsAuthenticated }) => {
             />
           </motion.div>
 
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }} className="mb-6">
+          <motion.div className="mb-6">
             <label className="block mb-2 font-extrabold">Password</label>
             <input
-              className="inline-block w-full p-4 leading-6 text-lg font-extrabold bg-white dark:bg-gray-800 shadow border-2 border-indigo-900 rounded focus:ring-2 focus:ring-indigo-600 transition-all"
+              className="w-full p-4 bg-white dark:bg-gray-800 border-2 border-indigo-900 rounded"
               type="password"
               name="password"
               value={loginInfo.password}
@@ -131,9 +101,7 @@ const Login = ({ setIsAuthenticated }) => {
           </motion.div>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className={`inline-block w-full py-4 px-6 mb-6 text-center text-lg leading-6 text-white font-extrabold bg-indigo-800 hover:bg-indigo-900 border-3 border-indigo-900 shadow-lg rounded transition-all ${
+            className={`w-full py-4 text-white font-bold bg-indigo-800 hover:bg-indigo-900 rounded ${
               loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
             disabled={loading}
@@ -141,7 +109,7 @@ const Login = ({ setIsAuthenticated }) => {
             {loading ? "Logging in..." : "Login"}
           </motion.button>
 
-          <p className="text-center font-extrabold">
+          <p className="text-center font-extrabold mt-4">
             Don't have an account?{" "}
             <a href="/signup" className="text-red-500 hover:underline">
               Sign up

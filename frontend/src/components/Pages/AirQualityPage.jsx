@@ -17,7 +17,7 @@ const AirQualityPage = () => {
   useEffect(() => {
     const fetchAirQualityData = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/sensor-data");
+        const response = await axios.get("http://localhost:5001/sensor-data");
         const filteredData = response.data.map(({ air_quality, timestamp }) => ({
           air_quality,
           timestamp,

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./components/context/Authcontext";
 
 import Navbar from "./components/Navbar/Navbar";
 import Hero from "./components/Hero/Hero";
@@ -9,16 +10,14 @@ import Signup from "./components/Auth/Signup";
 
 import AOS from "aos";
 import "aos/dist/aos.css";
+
 import TemperaturePage from "./components/Pages/TemperaturePage";
 import HumidityPage from "./components/Pages/HumidityPage";
 import AirQualityPage from "./components/Pages/AirQualityPage";
-import About from "./components/About/About";
+import WeatherPage from "./components/Pages/WeatherPage";
 
 const App = () => {
-  // ✅ Initialize auth state from localStorage
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return !!localStorage.getItem("authToken");
-  });
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     AOS.init({
@@ -31,7 +30,7 @@ const App = () => {
   }, []);
 
   const PrivateRoute = ({ element }) => {
-    return isAuthenticated ? element : <Navigate to="/login" />;
+    return isAuthenticated ? element : <Navigate to="/login" replace />;
   };
 
   return (
@@ -39,23 +38,21 @@ const App = () => {
       <div className="bg-white dark:bg-gray-900 dark:text-white duration-200">
         <Navbar />
         <Routes>
-          {/* Ensure Hero page is only accessible after login */}
-          <Route path="/" element={isAuthenticated ? <Hero /> : <Navigate to="/login" />} />
-          
+          {/* Hero page is now protected */}
+          <Route path="/" element={<PrivateRoute element={<Hero />} />} />
+
           {/* Auth Pages */}
-          <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
           {/* Protected Routes */}
           <Route path="/temperature" element={<PrivateRoute element={<TemperaturePage />} />} />
           <Route path="/humidity" element={<PrivateRoute element={<HumidityPage />} />} />
           <Route path="/air-quality" element={<PrivateRoute element={<AirQualityPage />} />} />
+          <Route path="/weather" element={<PrivateRoute element={<WeatherPage />} />} />
 
-          {/* Public Pages */}
-          <Route path="/about" element={<About />} />
+          {/* Public Fallback */}
           <Route path="/contact" element={<div>Contact Page</div>} />
-
-          {/* 404 Page */}
           <Route path="*" element={<div>404 - Page Not Found</div>} />
         </Routes>
         <Footer />

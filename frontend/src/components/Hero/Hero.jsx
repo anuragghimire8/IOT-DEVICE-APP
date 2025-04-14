@@ -8,6 +8,7 @@ import RonaldoSad from "../../assets/ronaldosad.png";
 const Hero = () => {
   const [sensorData, setSensorData] = useState([]);
   const [gameStatus, setGameStatus] = useState("Loading...");
+  const [userName, setUserName] = useState("");
 
   const determineGameStatus = (temperature, humidity, air_quality) => {
     if (temperature < 0 || temperature > 35) {
@@ -24,7 +25,7 @@ const Hero = () => {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/sensor-data");
+      const response = await axios.get("http://localhost:5001/sensor-data");
       setSensorData(response.data);
 
       if (response.data.length > 0) {
@@ -38,6 +39,13 @@ const Hero = () => {
   };
 
   useEffect(() => {
+    // Fetch user's name from localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUserName(parsedUser.name);
+    }
+
     fetchData();
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
@@ -46,6 +54,18 @@ const Hero = () => {
   return (
     <div className="py-16 sm:py-24 bg-light dark:bg-dark text-dark dark:text-light">
       <div className="mx-auto max-w-4xl px-6 lg:px-8 text-center">
+        {/* 👋 Animated Welcome */}
+        {userName && (
+          <motion.h3
+            className="text-xl sm:text-2xl font-semibold text-indigo-600 dark:text-indigo-400 mb-2"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+          >
+            👋 Welcome back, {userName}!
+          </motion.h3>
+        )}
+
         <motion.h1
           className="text-5xl font-bold tracking-tight text-dark dark:text-light sm:text-6xl"
           initial={{ opacity: 0, y: -40 }}
