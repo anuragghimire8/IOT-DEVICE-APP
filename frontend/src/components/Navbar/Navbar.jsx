@@ -45,6 +45,11 @@ const Navbar = () => {
     navigate("/login");
   };
 
+  const getUserName = () => {
+    const user = localStorage.getItem("user");
+    return user ? JSON.parse(user).name : "";
+  };
+
   return (
     <div className="shadow-md bg-white dark:bg-gray-900 dark:text-white duration-200">
       <div className="container py-3 sm:py-0">
@@ -91,21 +96,27 @@ const Navbar = () => {
               </li>
             </ul>
 
+            {/* Auth Buttons */}
             {isAuthenticated ? (
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 duration-200 text-white py-1 px-4 rounded-full flex items-center gap-2"
-              >
-                Logout
-                <FaSignOutAlt className="text-xl" />
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-md font-semibold text-indigo-600 dark:text-indigo-300 hidden sm:block">
+                   {getUserName()}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-1.5 rounded-full duration-200 shadow-md hover:scale-105"
+                >
+                  Logout
+                  <FaSignOutAlt className="text-lg" />
+                </button>
+              </div>
             ) : (
               <Link
                 to="/signup"
-                className="bg-gradient-to-r from-primary to-secondary hover:scale-105 duration-200 text-white py-1 px-4 rounded-full flex items-center gap-3"
+                className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold px-4 py-1.5 rounded-full shadow-md duration-200 hover:scale-105"
               >
                 Sign Up
-                <FaUserPlus className="text-xl text-white drop-shadow-sm cursor-pointer" />
+                <FaUserPlus className="text-lg" />
               </Link>
             )}
           </div>
